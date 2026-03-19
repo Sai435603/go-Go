@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -14,7 +15,7 @@ import (
 type Course struct {
 	CourseId    string  `json:"courseid"`
 	CourseName  string  `json:"coursename"`
-	CoursePrice int     `json:"courseprice"`
+	CoursePrice int     `json:"-"`
 	Author      *Author `json:"author"`
 }
 
@@ -31,6 +32,23 @@ func (c *Course) IsEmpty() bool {
 }
 
 func main() {
+	fmt.Println("Crud Api")
+
+	router := mux.NewRouter()
+
+	courses = append(courses, Course{CourseId: "1", CourseName: "Sai raam", CoursePrice: 69, Author: &Author{Fullname: "sai", Website: "sairaam.in"}})
+	courses = append(courses, Course{CourseId: "2", CourseName: "BGMI", CoursePrice: 699, Author: &Author{Fullname: "UNQ Gamer", Website: "unqsairaam.in"}})
+
+	//routing
+	router.HandleFunc("/", serveHome).Methods("GET")
+	router.HandleFunc("/courses", getAllCourses).Methods("GET")
+	router.HandleFunc("/course/{id}", getOneCourse).Methods("GET")
+	router.HandleFunc("/course", createOneCourse).Methods("POST")
+	router.HandleFunc("/course/{id}", updateOneCourse).Methods("PUT")
+	router.HandleFunc("/course/{id}", deleteOneCourse).Methods("DELETE")
+
+	//listening to the port 8000
+	log.Fatal(http.ListenAndServe(":8000", router))
 
 }
 
@@ -81,6 +99,13 @@ func createOneCourse(w http.ResponseWriter, r *http.Request) {
 	if course.IsEmpty() {
 		json.NewEncoder(w).Encode("No data inside JSON")
 		return
+	}
+	// checking course is already is there in the courses
+	for _, crs := range courses {
+		if crs.CourseName == course.CourseName {
+			json.NewEncoder(w).Encode("Sorry this course is already exist :(")
+			return
+		}
 	}
 
 	//gen unq id , and conv to str
